@@ -105,6 +105,36 @@ public class BasicCoffeeDAO {
         }
         return rowsAffected;
     }
+
+    public int saveWithAutoIncrementalID (String coffeeName, int supplierID, float price,
+                                          int sales, int total){
+        int rowsAffected=0;
+        try (Connection con = db.getConnection();
+             PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.INSERT_COFFEE_WITH_AUTOINCREMENTAL_ID,
+                                                                Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setString(2, coffeeName);
+            preparedStatement.setInt(3, supplierID);
+            preparedStatement.setFloat(4, price);
+            preparedStatement.setInt(5, sales);
+            preparedStatement.setInt(6, total);
+
+            rowsAffected= preparedStatement.executeUpdate();
+            ResultSet rs = preparedStatement.getGeneratedKeys();
+            if(rs.next()) {
+                int auto_id = rs.getInt(1);
+                System.out.println("The id of the new row is "+auto_id);
+            }
+
+        } catch (SQLException e) {
+            System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rowsAffected;
+    }
+    
+
+
     
     public int delete(int id) {
         int rowsAffected=0;
