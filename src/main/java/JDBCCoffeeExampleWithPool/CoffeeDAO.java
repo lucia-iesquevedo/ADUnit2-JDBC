@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 public class CoffeeDAO {
 
-    private Connection con;
+
     private Statement stmt;
     private ResultSet rs;
     private PreparedStatement pstmt;
@@ -139,14 +139,15 @@ public class CoffeeDAO {
             pstmt = null;
             pstmt2 = null;
 
-            try (Connection con = pool.getConnection();
-                 PreparedStatement pstmt = con.prepareStatement(SQLQueries.UPDATE_SALES_coffees);
-                 PreparedStatement pstmt2 = con.prepareStatement(SQLQueries.UPDATE_TOTAL_COFFEE);) {
+            try (Connection con = pool.getConnection();) {
 
-                // Disables autocommit
-                con.setAutoCommit(false);
+                try (PreparedStatement pstmt = con.prepareStatement(SQLQueries.UPDATE_SALES_coffees);
+                     PreparedStatement pstmt2 = con.prepareStatement(SQLQueries.UPDATE_TOTAL_COFFEE);) {
 
-                for (Map.Entry<String, Integer> e : sales.entrySet()) {
+                    // Disables autocommit
+                    con.setAutoCommit(false);
+
+                    for (Map.Entry<String, Integer> e : sales.entrySet()) {
                         pstmt.setInt(1, e.getValue());
                         pstmt.setString(2, e.getKey());
                         pstmt.executeUpdate();
@@ -154,17 +155,20 @@ public class CoffeeDAO {
                         pstmt2.setString(2, e.getKey());
                         pstmt2.executeUpdate();
 
-                // Commit when all movements have been done
-                con.commit();
-                }
-            } catch (SQLException sqle) {
-                Logger.getLogger(CoffeeDAO.class.getName()).log(Level.SEVERE, null, sqle);
-                try {
-                    con.rollback();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                        // Commit when all movements have been done
+                        con.commit();
+                    }
+                } catch (SQLException sqle) {
+                    Logger.getLogger(CoffeeDAO.class.getName()).log(Level.SEVERE, null, sqle);
+                    try {
+                        con.rollback();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
 
