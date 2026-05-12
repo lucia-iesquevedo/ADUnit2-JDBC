@@ -20,7 +20,7 @@ public class Configuration {
     private Properties p;
 
     private Configuration() {
-        Path p1 = Paths.get("src/main/java/JDBCCoffeeExample/mysql-properties.xml");
+        Path p1 = Paths.get("src/main/resources/mysql-properties.xml");
         p= new Properties();
         InputStream propertiesStream;
         try {
