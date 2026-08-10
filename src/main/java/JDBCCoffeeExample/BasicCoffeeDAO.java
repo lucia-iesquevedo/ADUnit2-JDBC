@@ -1,15 +1,18 @@
 package JDBCCoffeeExample;
 
+import JDBCCoffeeExample.model.Coffee;
 import JDBCCoffeeExample.utils.SQLQueries;
 import jakarta.inject.Inject;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class BasicCoffeeDAO {
 
-    private DBConnection db;
+    private final DBConnection db;
 
     @Inject
     public BasicCoffeeDAO(DBConnection db) {
@@ -19,62 +22,69 @@ public class BasicCoffeeDAO {
     /**
      * Lists all coffees using Statement Class
      */
-    public void getAll() {
-//        stmt = null;
-//        rs = null;
-//        try {
-//            // Open connection
-//            con = pool.getConnection();
-//            stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
-//                    ResultSet.CONCUR_UPDATABLE);
-//            ResultSet rs = stmt.executeQuery(SQLQueries.SELECT_coffees_QUERY);
-//            readRS(rs);
-//        } catch (SQLException ex) {
-//            Logger.getLogger(JDBCCoffeeExample.CoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
-//        } finally {
-//            // db.releaseResource(rs);
-//            // db.releaseResource(stmt); //Releasing the statement releases the Resultset
-//            pool.closeConnection(con); //Closing the connection releases the statements
-//        }
+    public List<Coffee> getAll() {
+        List<Coffee> coffees= new ArrayList<>();
         try (Connection con = db.getConnection();
-             Statement statement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
-                     ResultSet.CONCUR_READ_ONLY)) {
+             Statement statement = con.createStatement()) {
 
             ResultSet rs = statement.executeQuery(SQLQueries.SELECT_coffees_QUERY);
-            readRS(rs);
+            coffees=mapCoffee(rs);
 
         } catch (SQLException ex) {
             Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
+            //Throw exception?
         }
+        return coffees;
     }
 
     /**
-     * Lists coffees of a given name
+     * Get coffee by id
      */
-    public void get(String c) {
-
+    public Coffee get(int id) {
+        Coffee coffee = new Coffee();
         try (Connection con = db.getConnection();
-        PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.SELECT_coffee_QUERY)){
-            preparedStatement.setString(1, c);
+             PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.SELECT_coffeeById_QUERY)){
+            preparedStatement.setInt(1, id);
 
             // Executing the statement. The result will be stored in the ResultSet object
             ResultSet rs = preparedStatement.executeQuery();
-            readRS(rs);
+            coffee=mapCoffee(rs).get(0);
 
         } catch (SQLException ex) {
             Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
+            //Or throw exception
         }
+        return coffee;
+    }
+    /**
+     * Lists coffees of a given name
+     */
+    public List<Coffee> getAllByName(String c) {
+        List<Coffee> coffees= new ArrayList<>();
+        try (Connection con = db.getConnection();
+        PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.SELECT_coffeeByName_QUERY)) {        preparedStatement.setString(1, c);
+
+            // Executing the statement. The result will be stored in the ResultSet object
+            ResultSet rs = preparedStatement.executeQuery();
+            coffees= mapCoffee(rs);
+
+        } catch (SQLException ex) {
+            Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
+             //Or throw exception
+        }
+        return coffees;
     }
 
 
     /**
      * Method for updating coffee sales using executeUpdate method
      */
-    public void updateCoffeeSales(String coffee, int sales) {
+    public void update(Coffee coffee) {
+
         try (Connection con = db.getConnection();
              PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.UPDATE_SALES_coffees)) {
-            preparedStatement.setFloat(1, sales);
-            preparedStatement.setString(2, coffee);
+            preparedStatement.setFloat(1, coffee.getSales());
+            preparedStatement.setInt(2, coffee.getId());
 
             // executeUpdate method for INSERT, UPDATE and DELETE
             preparedStatement.executeUpdate();
@@ -83,100 +93,66 @@ public class BasicCoffeeDAO {
             Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, sqle);
         }
     }
-
-    public int save(String coffeeName, int supplierID, float price,
-                    int sales, int total) {
-        int rowsAffected=0;
-        try (Connection con = db.getConnection();
-             PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.INSERT_COFFEE)) {
-            preparedStatement.setInt(1, 12);
-            preparedStatement.setString(2, coffeeName);
-            preparedStatement.setInt(3, supplierID);
-            preparedStatement.setFloat(4, price);
-            preparedStatement.setInt(5, sales);
-            preparedStatement.setInt(6, total);
-
-            rowsAffected= preparedStatement.executeUpdate();
-
-        } catch (SQLException e) {
-            System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rowsAffected;
-    }
-
-    public int saveWithAutoIncrementalID (String coffeeName, int supplierID, float price,
-                                          int sales, int total){
-        int rowsAffected=0;
+    /**
+     * Method for saving coffee with autogenerated key
+     */
+    public int save (Coffee coffee){
+        int auto_id=0;
         try (Connection con = db.getConnection();
              PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.INSERT_COFFEE_WITH_AUTOINCREMENTAL_ID,
                                                                 Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setString(2, coffeeName);
-            preparedStatement.setInt(3, supplierID);
-            preparedStatement.setFloat(4, price);
-            preparedStatement.setInt(5, sales);
-            preparedStatement.setInt(6, total);
+            preparedStatement.setString(1, coffee.getName());
+            preparedStatement.setInt(2, coffee.getIdSupplier());
+            preparedStatement.setFloat(3, coffee.getPrice());
+            preparedStatement.setInt(4, coffee.getSales());
+            preparedStatement.setFloat(5, coffee.getTotal());
 
-            rowsAffected= preparedStatement.executeUpdate();
+            int rowsAffected= preparedStatement.executeUpdate();
             ResultSet rs = preparedStatement.getGeneratedKeys();
             if(rs.next()) {
-                int auto_id = rs.getInt(1);
-                System.out.println("The id of the new row is "+auto_id);
+                auto_id = rs.getInt(1);
             }
 
-        } catch (SQLException e) {
-            System.err.format("SQL State: %s\n%s", e.getSQLState(), e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return rowsAffected;
+        return auto_id;
     }
-    
 
-
-    
-    public int delete(int id) {
-        int rowsAffected=0;
+    /**
+     * Method for deleting coffee by id
+     */
+    public void delete(int id) {
         try (Connection con = db.getConnection();
         PreparedStatement preparedStatement = con.prepareStatement(SQLQueries.DELETE_COFFEE)) {
             preparedStatement.setInt(1, id);
             // executeUpdate method for INSERT, UPDATE and DELETE
-            rowsAffected= preparedStatement.executeUpdate();
+            //rowsAffected= preparedStatement.executeUpdate();
+            preparedStatement.executeUpdate();
 
         } catch (SQLException sqle) {
             Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, sqle);
         }
-        return rowsAffected;
     }
 
     // Private methods
-    private void readRS(ResultSet rs) {
+    private List<Coffee> mapCoffee(ResultSet rs) {
+        List<Coffee> coffees = new ArrayList<>();
         try {
             while (rs.next()) {
-                int prodId = rs.getInt("id_prod");
-                String coffeeName = rs.getString("COF_NAME");
-                int supplierID = rs.getInt("SUPP_ID");
-                float price = rs.getFloat("PRICE");
-                int sales = rs.getInt("SALES");
-                int total = rs.getInt("TOTAL");
-                System.out.println(prodId + ", " + coffeeName + ", " + supplierID + ", " + price +
-                        ", " + sales + ", " + total);
+                Coffee coffee=new Coffee();
+                coffee.setId(rs.getInt("id_prod")); // also with indexes: rs.getInt(1)
+                coffee.setName(rs.getString("COF_NAME")); //also with indexes: rs.getString(2)
+                coffee.setIdSupplier(rs.getInt("SUPP_ID"));
+                coffee.setPrice(rs.getFloat("PRICE"));
+                coffee.setSales(rs.getInt("SALES"));
+                coffees.add(coffee);
+          }
 
-
-                // Reading the ResultSet with indexes
-//                    while (rs.next()) {
-//                        String coffeeName = rs.getString(1);
-//                        int supplierID = rs.getInt(2);
-//                        float PRICE = rs.getFloat(3);
-//                        int SALES = rs.getInt(4);
-//                        int total = rs.getInt(5);
-//                        System.out.println(coffeeName + ", " + supplierID + ", "
-//                                        + PRICE + ", " + SALES + ", " + total);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(BasicCoffeeDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return coffees;
     }
 
 }

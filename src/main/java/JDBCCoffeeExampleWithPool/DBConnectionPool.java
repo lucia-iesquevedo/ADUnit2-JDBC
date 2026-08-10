@@ -15,24 +15,21 @@ import java.util.Optional;
 @Singleton
 public class DBConnectionPool {
 
-    private Configuration config;
-    private DataSource hikariDataSource;
-    private BasicDataSource basicDataSource;
+    private final Configuration config;
+    private final DataSource hikariDataSource;
 
     @Inject
     public DBConnectionPool(Configuration config) {
         this.config = config;
         hikariDataSource = getHikariPool();
-        basicDataSource = getBasicPool();
-
-    }
+     }
 
     private DataSource getHikariPool() {
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl(config.getProperty("urlDB"));
         hikariConfig.setUsername(config.getProperty("user_name"));
         hikariConfig.setPassword(config.getProperty("password"));
-        hikariConfig.setDriverClassName(config.getProperty("driver"));
+        //hikariConfig.setDriverClassName(config.getProperty("driver"));
         hikariConfig.setMaximumPoolSize(4);
 
         hikariConfig.addDataSourceProperty("cachePrepStmts", true);
@@ -40,15 +37,6 @@ public class DBConnectionPool {
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
 
         return new HikariDataSource(hikariConfig);
-    }
-
-    private BasicDataSource getBasicPool() {
-        BasicDataSource basicDataSource = new BasicDataSource();
-        basicDataSource.setUsername(config.getProperty("user_name"));
-        basicDataSource.setPassword(config.getProperty("password"));
-        basicDataSource.setUrl(config.getProperty("urlDB"));
-
-        return basicDataSource;
     }
 
     public Connection getConnection() {
