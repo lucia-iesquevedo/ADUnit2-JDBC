@@ -1,5 +1,6 @@
 package JDBCCoffeeExampleWithPool;
 
+import JDBCCoffeeExample.model.Coffee;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
@@ -13,15 +14,9 @@ public class Main {
         final SeContainer container = initializer.initialize();
 
         CoffeeDAO coffeeDAO = container.select(CoffeeDAO.class).get();
+        System.out.println("List of coffees: " + coffeeDAO.getAll());
 
-        System.out.println("List of coffees:");
-
-        coffeeDAO.getAll();
-
-        coffeeDAO.updateCoffeePrices(5);
-
-        coffeeDAO.saveAndDeleteWithRS(17,"coffee15", 101, 200, 10, 470);
-
+        coffeeDAO.crudWithRS(new Coffee(321, "Sudafrica250", 101, 200, 10, 470));
 
         HashMap<String, Integer> sales = new HashMap<String, Integer>();
         sales.put("Colombian", 175);
@@ -32,7 +27,7 @@ public class Main {
 
         coffeeDAO.updateSales(sales);
 
-        coffeeDAO.getAll();
+        System.out.println("List of coffees after sales update: " + coffeeDAO.getAll());
 
         }
 }

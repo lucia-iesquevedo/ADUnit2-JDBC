@@ -1,10 +1,8 @@
 package JDBCCoffeeExample;
 
+import JDBCCoffeeExample.model.Coffee;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
-
-import java.util.HashMap;
-
 
 
 public class Main {
@@ -15,34 +13,29 @@ public class Main {
 
         BasicCoffeeDAO coffeeDAO = container.select(BasicCoffeeDAO.class).get();
 
-            System.out.println("List of coffees:");
+        System.out.println("List of coffees: " + coffeeDAO.getAll());
 
-            coffeeDAO.getAll();
+        System.out.println("List coffee with id=1: " + coffeeDAO.get(1));
 
-            System.out.println("List of Colombian coffees:");
+        System.out.println("List of Colombian coffees:" + coffeeDAO.getAllByName("Colombian"));
 
-            coffeeDAO.get("Colombian");
+        System.out.println("Update sales of id=1 coffee:");
 
-            coffeeDAO.updateCoffeeSales("Colombian", 678);
+        coffeeDAO.update(new Coffee(1, 679));
 
-            System.out.println(coffeeDAO.save("Sudafrica250", 101, 200, 10, 470) + " rows saved");
+        System.out.println("Coffee updated: " + coffeeDAO.get(1));
 
-            coffeeDAO.getAll();
+        int newId=coffeeDAO.save(new Coffee(0, "Sudafrica250", 101, 200, 10, 470));
 
-            System.out.println(coffeeDAO.delete(12) + " rows deleted");
+        System.out.println("Coffee added with index: " + newId);
 
-//            coffeeDAO.updateCoffeePrices(5);
-//
-//                HashMap<String, Integer> sales = new HashMap<String, Integer>();
-//                sales.put("Colombian", 175);
-//                sales.put("French_Roast", 150);
-//                sales.put("Espresso", 60);
-//                sales.put("Colombian_Decaf", 155);
-//                sales.put("French_Roast_Decaf", 90);
-//
-//            coffeeDAO.updateSales(sales);
-//
-//            coffeeDAO.getAll();
+        System.out.println("List of coffees: " + coffeeDAO.getAll());
+
+        //coffeeDAO.delete(newId);
+
+        System.out.println(" Coffee with id "+newId+" deleted");
+
+        System.out.println("List of coffees: " + coffeeDAO.getAll());
 
         }
 }
